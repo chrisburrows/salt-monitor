@@ -1,0 +1,15 @@
+[Unit]
+Description=Salt Monitor Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=nobody
+EnvironmentFile=/usr/local/etc/salt-monitor.env
+ExecStart=/usr/local/bin/salt-monitor.py
+
+[Install]
+WantedBy=multi-user.target
