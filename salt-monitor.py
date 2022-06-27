@@ -419,7 +419,6 @@ log.info("+-----------------+")
 log.info("|   Starting up   |")
 log.info("+-----------------+")
 log.info("")
-log.debug("MQTT identity: {u}/{p}".format(u=MQTT_USER, p=MQTT_PASSWORD))
 
 client = None
 try:
