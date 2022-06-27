@@ -1,0 +1,18 @@
+version: "3.3"
+
+services:
+  salt-monitor:
+    build:
+      context: .
+
+    image: ${PERSONAL_DOCKER_REGISTRY}/salt-monitor
+    container_name: salt-monitor
+    restart: unless-stopped
+
+    environment:
+        MQTT_BROKER: ${MQTT_BROKER}
+        MQTT_PORT: 1883
+        MQTT_USER: ${MQTT_USER}
+        MQTT_PASSWORD: ${MQTT_PASSWORD}
+        CAMERA_IP: ${SALT_CAMERA_IP}
+
