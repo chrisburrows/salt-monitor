@@ -30,8 +30,10 @@ HIGH_HSV = (16, 168, 255)
 BOUNDING_BOX_TOP_LEFT = (150, 400)
 BOUNDING_BOX_BOTTOM_RIGHT = (775, 600)
 
-# default update is 6 hours
-UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", "21600"))
+# default update is 1 hours
+UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", "3600"))
+FAST_UPDATE_INTERVAL = int(os.getenv("FAST_UPDATE_INTERVAL", "120"))
+SALT_ADDED_AFTER_COUNT = int(os.getenv("SALT_ADDED_AFTER_COUNT_CHECKS", "3"))
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mqtt.local")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
@@ -433,7 +435,7 @@ try:
         client.will_set(MQTT_BASE_TOPIC + "/status", payload="offline", retain=True)
 
     while(True):
-
+        salt_replaced_counter = 0
         try:
             if client is not None:
                 log.info("MQTT: connecting to broker {ip}:{port}".format(ip=MQTT_BROKER, port=MQTT_PORT))
@@ -459,14 +461,26 @@ try:
                     update_salt_detection_image(client, detection_img)
                     update_salt_camera_problem_sensor(client, False)
 
-                log.debug("Waiting until next update")
-                time.sleep(UPDATE_INTERVAL)
+                delay = UPDATE_INTERVAL
+                if salt_needed:
+                    salt_replaced_counter = 0
+                    delay = FAST_UPDATE_INTERVAL
+                else:
+                    salt_replaced_counter = salt_replaced_counter + 1
+                    if salt_replaced_counter <= SALT_ADDED_AFTER_COUNT:
+                        delay = FAST_UPDATE_INTERVAL
+
+                log.debug("Waiting until next update: {} seconds", delay)
+                time.sleep(delay)
 
         except RuntimeError as e:
             log.error("CAMERA: API error: {err}".format(err=str(e)))
             if client is not None:
                 update_salt_camera_problem_sensor(client, True)
             time.sleep(30)
+            # exit and have docker restart the application
+            # the sleep will limit any fast looping
+            break
 
         except ConnectionRefusedError:
             log.error("MQTT: Failed to connect to broker on {ip}:{port}".format(ip=MQTT_BROKER, port=MQTT_PORT))
